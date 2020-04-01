@@ -12,14 +12,27 @@ box = "   +   +   \n   |   |   \n   |   |   \n+--+---+--+\n   |   |   \n   |   |
 # Record filled boxes; 0 for server; 1 for client;s
 box_record = [-1, -1, -1, -1, -1, -1, -1, -1, -1]
 
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
-
 head_message = """
-    Welcome to tic-tac-toe
-    For Server: O
-    For client: X
-    Press ctrl+c to exit
+Welcome to tic-tac-toe
+For Server: O
+For client: X
+Press ctrl+c to exit
 """
+
+postion_to_index = {
+    "0": 13,
+    "1": 17,
+    "2": 21,
+    "3": 61,
+    "4": 65,
+    "5": 69,
+    "6": 109,
+    "7": 113,
+    "8": 117
+}
+
+# create a socket object
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
 
 def checkWinner():
    if box_record[0] == box_record[1] == box_record[2]:
@@ -47,14 +60,6 @@ def printWinner(sign):
       print("Client is winner...")
       sys.exit()
 
-def clear(): 
-    # for windows 
-    if name == 'nt': 
-        _ = system('cls') 
-    # for mac and linux(here, os.name is 'posix') 
-    else: 
-        _ = system('clear') 
-
 def intHandler(sig, frame):
     print('Closing...')
     s.close()
@@ -66,34 +71,24 @@ def changeBox(sign, position):
    if position in {13, 17, 21, 61, 65, 69, 109, 113, 117}:
       return  box[0:position] + str(sign) + box[(position+1):]
 
-def receiveSignal(signalNumber, frame):
-    print('\nClosing...',)
-    return
+def clear(): 
+    # for windows 
+    if name == 'nt': 
+        _ = system('cls') 
+    # for mac and linux(here, os.name is 'posix') 
+    else: 
+        _ = system('clear') 
 
 if __name__ == "__main__":
 
-    # create a socket object
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
+    # Get local machine name
+    host = socket.gethostname()  
 
-    # get local machine name
-    host = socket.gethostname()                           
+    #  Port to be used for application
     port = 9991
 
     # connection to hostname on the port.
     s.connect((host, port))       
-
-    # Gaming stuff stuff
-    postion_to_index = {
-      "0": 13,
-      "1": 17,
-      "2": 21,
-      "3": 61,
-      "4": 65,
-      "5": 69,
-      "6": 109,
-      "7": 113,
-      "8": 117
-    }
 
     # Receive message about who will play first; 0 for server and 1 for client
     msg = s.recv(1024)  
@@ -102,41 +97,70 @@ if __name__ == "__main__":
     # Set send variable; if 1 send message; if 0 recieve message
     if first_play == "0":
         send = 0
+        print("Server will play first.")
     else:
         send = 1
+        print("You will play first.")
 
     while True:
 
         if send == 1:
             # Clear input buffer
             tcflush(sys.stdin, TCIFLUSH)
+
+            # Get input from console
             input_recieved = str(int(input(">"))) 
+
             print(input_recieved)
             if input_recieved in ["1", "2", "3", "4", "5", "6", "7", "8", "9"] and box_record[int(input_recieved) - 1] == -1:
+                            
+                # Subtract 1 beacuse index start from 0
                 input_recieved = str(int(input_recieved) - 1)
+
+                # Add "X" to the box for client
                 box = changeBox("X", postion_to_index[input_recieved])
+
+                # Mark the record for that input position
                 box_record[int(input_recieved)] = 1
+
+                # Send the recieved input 
                 s.send(input_recieved.encode('ascii'))
+
+                # Clear console before printing next box
                 clear()
+
+                # Print help text and box
                 print(head_message)
                 print(box)
+
+                # Check if there is any winner in updated box
                 checkWinner()
+
                 print("\nNow server's turn...\n")
                 send = 0
             else:
                 continue
 
         if send != 1:
+
+            # Recieve message from server
             msg = s.recv(1024)
             msg = str(msg.decode('ascii'))
+
+            # Add "O" to the box for server
             box = changeBox("O", postion_to_index[msg])
+
+            # Mark the record for that recieved input
             box_record[int(msg)] = 0
+
+            # Clear console before printing next box
             clear()
+
+            # Print helo text and box
             print(head_message)
             print(box)  
+
+            # Check if there is any winner in updated box
             checkWinner()
             send = 1                                 
-        
-
-    s.close()
 
