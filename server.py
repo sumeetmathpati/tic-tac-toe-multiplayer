@@ -1,11 +1,21 @@
-#!/usr/bin/python3 
-
-import socket       
-import random 
+import socket
+import random
 import signal
 import sys
-from os import system, name 
+from os import system, name
 from termios import tcflush, TCIFLUSH
+
+# ---------- SOCKET DATA ----------
+
+# Create socket
+serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+# Frees the socket to reuse
+serversocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+# Bind socket with port
+serversocket.bind(("0.0.0.0", 8000))
+
+
+# ---------- GAME DATA ----------
 
 # Box design string
 box = "   +   +   \n   |   |   \n   |   |   \n+--+---+--+\n   |   |   \n   |   |   \n   |   |   \n+--+---+--+\n   |   |   \n   |   |   \n   +   +   \n"
@@ -13,13 +23,7 @@ box = "   +   +   \n   |   |   \n   |   |   \n+--+---+--+\n   |   |   \n   |   |
 # Record filled boxes; 0 for server; 1 for client;s
 box_record = [-1, -1, -1, -1, -1, -1, -1, -1, -1]
 
-head_message = """
-Welcome to tic-tac-toe
-   For Server: O
-   For client: X
-   Press ctrl+c to exit
-"""
-
+# Position of box in the box string
 postion_to_index = {
    "0": 13,
    "1": 17,
@@ -32,96 +36,103 @@ postion_to_index = {
    "8": 117
 }
 
-# Server socket
-serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
+
+# ---------- OTHER DATA ----------
+
+head_message = """
+Welcome to tic-tac-toe
+   For Server: O
+   For client: X
+   Press ctrl+c to exit
+"""
+
+
+# ---------- UTIL FUNCTIONS ----------
+
 
 def checkWinner():
-   if box_record[0] == box_record[1] == box_record[2]:
-      printWinner(box_record[0])
-   elif box_record[3] == box_record[4] == box_record[5]:
-      printWinner(box_record[3])
-   elif box_record[6] == box_record[7] == box_record[8]:
-      printWinner(box_record[6])
-   elif box_record[0] == box_record[3] == box_record[6]:
-      printWinner(box_record[0])
-   elif box_record[1] == box_record[4] == box_record[7]:
-      printWinner(box_record[1])
-   elif box_record[2] == box_record[5] == box_record[8]:
-      printWinner(box_record[2])
-   elif box_record[0] == box_record[4] == box_record[8]:
-      printWinner(box_record[0])
-   elif box_record[6] == box_record[4] == box_record[2]:
-      printWinner(box_record[6])
+    if box_record[0] == box_record[1] == box_record[2]:
+        printWinner(box_record[0])
+    elif box_record[3] == box_record[4] == box_record[5]:
+        printWinner(box_record[3])
+    elif box_record[6] == box_record[7] == box_record[8]:
+        printWinner(box_record[6])
+    elif box_record[0] == box_record[3] == box_record[6]:
+        printWinner(box_record[0])
+    elif box_record[1] == box_record[4] == box_record[7]:
+        printWinner(box_record[1])
+    elif box_record[2] == box_record[5] == box_record[8]:
+        printWinner(box_record[2])
+    elif box_record[0] == box_record[4] == box_record[8]:
+        printWinner(box_record[0])
+    elif box_record[6] == box_record[4] == box_record[2]:
+        printWinner(box_record[6])
+
 
 def printWinner(sign):
-   if sign == 0:
-      print("Server is winner...")
-      sys.exit()
-   elif sign == 1:
-      print("Client is winner...")
-      sys.exit()
+    if sign == 0:
+        print("Server is winner...")
+        sys.exit()
+    elif sign == 1:
+        print("Client is winner...")
+        sys.exit()
 
-def intHandler(sig, frame):
-   print('\nClosing...')
-   serversocket.close()
-   sys.exit(0)
-signal.signal(signal.SIGINT, intHandler)
 
 def changeBox(sign, position):
-   # Pass the position by counting from zero
-   if position in {13, 17, 21, 61, 65, 69, 109, 113, 117}:
-      return box[0:position] + str(sign) + box[(position+1):]
+    # Pass the position by counting from zero
+    if position in {13, 17, 21, 61, 65, 69, 109, 113, 117}:
+        return box[0:position] + str(sign) + box[(position+1):]
 
-def clear(): 
-    # for windows 
-    if name == 'nt': 
-        _ = system('cls') 
-    # for mac and linux(here, os.name is 'posix') 
-    else: 
-        _ = system('clear') 
 
-if __name__ == "__main__":
+def clear():
+    # for windows
+    if name == 'nt':
+        _ = system('cls')
+    # for mac and linux(here, os.name is 'posix')
+    else:
+        _ = system('clear')
 
-   # Get local machine name 
-   host = socket.gethostname()       
 
-   # Port to be used for applocation
-   port = 9991
-                      
-   # bind to the port
-   serversocket.bind((host, port))  
+# ---------- INSTRUCTIONS ----------
 
-   # Listen for clients
-   serversocket.listen(5)       
+# Listen for clients
+serversocket.listen(5)
 
-   # Accept client  
-   clientsocket,addr = serversocket.accept() 
+# Start listening on socket
+serversocket.listen(2)
 
-   # Who will play first; 0 for server and 1 for client
-   first_play = random.choice(["1", "0"])
-   
-   # send variable; if 1 client will play first; if 0 server wil play first
-   if first_play == "0":
-      send = 1
-      print("You will play first.")
-   else:
-      send = 0
-      print("Client will play first.")
-   
+# Accept clients
+(clientsocket, (ip, port)) = serversocket.accept()
 
-   # Tell client who will play first
-   clientsocket.send(first_play.encode('ascii'))
+# Who will play first; 0 for server and 1 for client
+first_play = random.choice(["1", "0"])
 
-   while True:
-      
-      if send == 1:
-         # Clear input buffer
-         tcflush(sys.stdin, TCIFLUSH)
+# send variable; if 1 client will play first; if 0 server wil play first
+if first_play == "0":
+    send = 1
+    print("You will play first.")
+else:
+    send = 0
+    print("Client will play first.")
 
-         # Get input from console
-         input_recieved = str(int(input(">")))
 
-         if input_recieved in ["1", "2", "3", "4", "5", "6", "7", "8", "9"] and box_record[int(input_recieved) - 1] == -1:
+# Tell client who will play first
+clientsocket.send(first_play.encode('ascii'))
+
+
+# ---------- SUPER LOOP ----------
+
+while(True):
+
+    if send == 1:
+
+        # Clear input buffer
+        tcflush(sys.stdin, TCIFLUSH)
+
+        # Get input from console
+        input_recieved = str(int(input(">")))
+
+        if input_recieved in ["1", "2", "3", "4", "5", "6", "7", "8", "9"] and box_record[int(input_recieved) - 1] == -1:
 
             # Subtract 1 beacuse index start from 0
             input_recieved = str(int(input_recieved) - 1)
@@ -132,7 +143,7 @@ if __name__ == "__main__":
             # Mark the record for that input position
             box_record[int(input_recieved)] = 0
 
-            # Send the recieved input 
+            # Send the recieved input
             clientsocket.send(input_recieved.encode('ascii'))
 
             # Clear console before printing next box
@@ -147,29 +158,34 @@ if __name__ == "__main__":
 
             print("\nNow client's turn...\n")
             send = 0
-         else:
+        else:
             continue
-      
-      if send != 1:
 
-         # Recieve message from client
-         msg = clientsocket.recv(1024)
-         msg = str(msg.decode('ascii'))
+    if send != 1:
 
-         # Add "X" to the box for client
-         box = changeBox("X", postion_to_index[msg])
+        # Recieve message from client
+        msg = clientsocket.recv(1024)
+        msg = str(msg.decode('ascii'))
 
-         # Mark the record for that recieved input
-         box_record[int(msg)] = 1
+        # Add "X" to the box for client
+        box = changeBox("X", postion_to_index[msg])
 
-         # Clear console before printing next box
-         clear()
+        # Mark the record for that recieved input
+        box_record[int(msg)] = 1
 
-         # Print helo text and box
-         print(head_message)
-         print(box)   
+        # Clear console before printing next box
+        clear()
 
-         # Check if there is any winner in updated box
-         checkWinner()
-         send = 1
+        # Print helo text and box
+        print(head_message)
+        print(box)
 
+        # Check if there is any winner in updated box
+        checkWinner()
+        send = 1
+
+
+# ---------- END PROGRAM ----------
+
+tcpSocket.close()
+client.close()
