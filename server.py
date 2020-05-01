@@ -18,7 +18,7 @@ serversocket.bind(("0.0.0.0", 8000))
 # ---------- GAME DATA ----------
 
 # Box design string
-box = "   +   +   \n   |   |   \n   |   |   \n+--+---+--+\n   |   |   \n   |   |   \n   |   |   \n+--+---+--+\n   |   |   \n   |   |   \n   +   +   \n"
+box = "1  |2  |3  \n   |   |   \n   |   |   \n+--+---+--+\n4  |5  |1  \n   |   |   \n   |   |   \n+--+---+--+\n7  |8  |9  \n   |   |   \n   |   |   \n"
 
 # Record filled boxes; 0 for server; 1 for client;s
 box_record = [-1, -1, -1, -1, -1, -1, -1, -1, -1]
@@ -121,6 +121,8 @@ clientsocket.send(first_play.encode('ascii'))
 
 
 # ---------- SUPER LOOP ----------
+
+print(box)
 
 while(True):
 

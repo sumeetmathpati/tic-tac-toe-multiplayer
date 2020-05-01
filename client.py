@@ -19,7 +19,7 @@ socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 # ---------- GAME DATA ----------
 
 # Box design string
-box = "   +   +   \n   |   |   \n   |   |   \n+--+---+--+\n   |   |   \n   |   |   \n   |   |   \n+--+---+--+\n   |   |   \n   |   |   \n   +   +   \n"
+box = "1  |2  |3  \n   |   |   \n   |   |   \n+--+---+--+\n4  |5  |1  \n   |   |   \n   |   |   \n+--+---+--+\n7  |8  |9  \n   |   |   \n   |   |   \n"
 
 # Record filled boxes; 0 for server; 1 for client;s
 box_record = [-1, -1, -1, -1, -1, -1, -1, -1, -1]
@@ -110,6 +110,8 @@ else:
     print("You will play first.")
 
 # ---------- SUPER LOOP ----------
+
+print(box)
 
 while(True):
 
