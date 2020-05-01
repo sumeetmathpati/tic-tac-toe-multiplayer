@@ -9,4 +9,4 @@ Run `server.py` on server machine.
 
 Run `client.py <server_ip_address>` on client machine
 
-    python3 ./client.py
+    python3 ./client.py 192.168.0.1
